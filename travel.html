@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Budget</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD6I_IKP5hiZ03m9S55DZWS5pw9KWsYwig&libraries=places"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style2.css">
+</head>
+<body>
+    
+
+<h3 id="result"></h3>
+
+    <div class="container">
+        <h2>Travel Budget Calculator</h2>
+        <div class="input-group">
+            <label for="from">From:</label>
+            <input type="text" id="from" placeholder="Enter starting location">
+        </div>
+        <div class="input-group">
+            <label for="to">To:</label>
+            <input type="text" id="to" placeholder="Enter destination">
+        </div>
+        <button onclick="calculateDistance()">Calculate Distance</button>
+    </div>
+
+    <div id="popup" class="popup">
+        <h3 id="distanceText"></h3>
+        <p>Select your vehicle:</p>
+        <button onclick="selectTravelMode(1.5, 'Normal Bus')">Normal Bus</button>
+        <button onclick="selectTravelMode(3, 'AC Bus')">AC Bus</button>
+        <button onclick="selectTravelMode(7, 'Personal Car')">Personal Car</button>
+        <button onclick="selectTravelMode(2.5, 'Personal Bike')">Personal Bike</button>
+        <p id="priceText"></p>
+        <button onclick="closePopup()">Close</button>
+    </div>
+
+    <div id="questionPopup" class="popup" style="display:none;">
+        <h3 id="questionText"></h3>
+        <div id="options"></div>
+        <button onclick="nextQuestion()">Next</button>
+    </div>
+
+    <script>
+        let totalDistance = 0;
+        let travelData = {};
+        let currentQuestionIndex = 0;
+        
+        function calculateDistance() {
+            const from = document.getElementById("from").value;
+            const to = document.getElementById("to").value;
+            const service = new google.maps.DistanceMatrixService();
+            
+            service.getDistanceMatrix({
+                origins: [from],
+                destinations: [to],
+                travelMode: 'DRIVING',
+            }, (response, status) => {
+                if (status !== 'OK' || !response.rows[0].elements[0].distance) {
+                    alert("Error calculating distance. Please try again.");
+                    return;
+                }
+                
+                totalDistance = response.rows[0].elements[0].distance.value / 1000; // Convert meters to km
+                document.getElementById("distanceText").innerText = `Total distance is ${totalDistance.toFixed(2)} km`;
+                document.getElementById("popup").style.display = "block";
+            });
+        }
+
+        function selectTravelMode(rate, mode) {
+            const price = totalDistance * rate;
+            document.getElementById("priceText").innerText = `Estimated cost: ₹${price.toFixed(2)}`;
+            travelData["mode"] = mode;
+            travelData["cost"] = price.toFixed(2);
+            localStorage.setItem("travelData", JSON.stringify(travelData));
+            
+            setTimeout(() => {
+                document.getElementById("popup").style.display = "none";
+                showQuestionPopup();
+            }, 1000);
+        }
+
+        function showQuestionPopup() {
+            currentQuestionIndex = 0;
+            document.getElementById("questionPopup").style.display = "block";
+            displayQuestion();
+        }
+
+        const questions = [
+            { 
+                text: "How are you traveling?", 
+                options: ["Solo", "With Family", "With Friends"] 
+            },
+            { 
+                text: "What is your preferred travel style?", 
+                options: ["Budget", "Luxury", "Backpacking"] 
+            }
+        ];
+
+        function displayQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                document.getElementById("questionPopup").style.display = "none";
+                return;
+            }
+
+            const questionData = questions[currentQuestionIndex];
+            document.getElementById("questionText").innerText = questionData.text;
+            const optionsContainer = document.getElementById("options");
+            optionsContainer.innerHTML = "";
+
+            questionData.options.forEach(option => {
+                let button = document.createElement("button");
+                button.innerText = option;
+                button.onclick = () => saveAnswer(questionData.text, option);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function saveAnswer(question, answer) {
+            travelData[question] = answer;
+            localStorage.setItem("travelData", JSON.stringify(travelData));
+            currentQuestionIndex++;
+            displayQuestion();
+        }
+        function selectTravelMode(rate, mode) {
+    const price = totalDistance * rate;
+    document.getElementById("priceText").innerText = `Estimated cost: ₹${price.toFixed(2)}`;
+
+    travelData["mode"] = mode;
+    travelData["cost"] = price.toFixed(2);
+    travelData["distance"] = totalDistance.toFixed(2); // Add distance data
+
+    // Send data to Flask API
+    sendDataToFlask(travelData);
+
+    setTimeout(() => {
+        document.getElementById("popup").style.display = "none";
+        showQuestionPopup();
+    }, 1000);
+}
+function sendDataToFlask(travelData) {
+    fetch('http://127.0.0.1:5000/predict', {  // Change this if deployed
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(travelData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("API Response:", data);
+        document.getElementById("result").innerText = `Predicted Budget: ₹${data.budget}`;
+    })
+    .catch(error => console.error("Error:", error));
+}
+
+    </script>
+</body>
+</html>

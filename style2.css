@@ -1,0 +1,44 @@
+/* Apply background image */
+body {
+    background: url('travel.img.png') no-repeat center center fixed;
+    background-size: cover;
+    font-family: Arial, sans-serif;
+}
+
+/* Centering the calculator */
+.container {
+    width: 400px;
+    background: rgba(255, 255, 255, 0.85); /* Light transparency */
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    margin: 100px auto;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Styling input fields */
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group input {
+    width: 90%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+/* Button styling */
+button {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
+    background-color: #218838;
+}
